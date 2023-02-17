@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+	<_locDefinition xmlns="urn:locstudio">
+		<_locDefault _loc="locNone"/>
+		<_locTag _loc="locData">Title</_locTag>
+		<_locTag _loc="locData">Description</_locTag>
+		<_locTag _loc="locData">Author</_locTag>
+		<_locTag _loc="locData">ToolTip</_locTag>
+	</_locDefinition>
+	<CodeSnippet Format="1.0.0">
+		<Header>
+			<Title>Insert a Quooda User</Title>
+			<Shortcut/>
+			<Description>Insert a Quooda User</Description>
+			<Author>Clivus Maximus</Author>
+			<SnippetTypes>
+				<SnippetType>Expansion</SnippetType>
+			</SnippetTypes>
+		</Header>
+		<Snippet>
+			<Declarations>
+				<Literal>
+					<ID>EncryptedPassword</ID>
+					<ToolTip>EncryptedPassword</ToolTip>
+					<Default>0B5xnLX1DTm9Hg6g7DU0OQ==</Default>
+				</Literal>
+				<Literal>
+					<ID>Salt</ID>
+					<ToolTip>Salt</ToolTip>
+					<Default>NWFkNmVhOGFiMTEwNDY0Zjk3MTIxZGIzOTkwMjM2YWY=</Default>
+				</Literal>
+				<Literal>
+					<ID>EmailAddress</ID>
+					<ToolTip>EmailAddress</ToolTip>
+					<Default>clivus@outlook.com</Default>
+				</Literal>
+				<Literal>
+					<ID>Surname</ID>
+					<ToolTip>Surname</ToolTip>
+					<Default>Maximus</Default>
+				</Literal>
+				<Literal>
+					<ID>UserName</ID>
+					<ToolTip>UserName</ToolTip>
+					<Default>Clivus</Default>
+				</Literal>
+				<Literal>
+					<ID>OrganisationId</ID>
+					<ToolTip>OrganisationId</ToolTip>
+					<Default>0</Default>
+				</Literal>
+			</Declarations>
+			<Code Language="SQL"><![CDATA[
+declare @EncryptedPassword nvarchar(24) = '0B5xnLX1DTm9Hg6g7DU0OQ==';
+declare @Salt nvarchar(44) = 'NWFkNmVhOGFiMTEwNDY0Zjk3MTIxZGIzOTkwMjM2YWY=';
+declare @EmailAddress nvarchar(50) = 'clivus@outlook.com';
+declare @Surname nvarchar(50) = 'Maximus';
+declare @UserName nvarchar(50) = 'Clivus'
+declare @OrganisationId int = '0'; 
+
+if @OrganisationId = 0 and (select count(*) from Organizations) = 1 
+begin
+	select @OrganisationId = Id from Organizations;
+end;
+else 
+begin
+	select Id,OrganizationName [Please set @OrganisationId for OrganizationName] from Organizations;
+	return;
+end;
+
+if not exists(select * from Users where UserName = @UserName and IsDeleted = 0)
+begin
+	insert into Users (
+	UserName,Password,IsLocked,CurrentCultureUICode,LastLoggedIn,IsLoggedIn,OrganisationId,DateAdded
+	,AddedBy,IsDeleted,ForeName,StaffID,SecurityLevelId,DefaultLocationId,SecondaryLocationId,PhoneNumber1
+	,PhoneNumber2,EmailAddress,RoleTypeId,Surname,UpdatedBy,SecurityQuestion,SecurityQuestionAnswer
+	,UpdatedDate,FailedLoginAttempts,MobileUserIdentifier,LastDeviceSyncTime,DateOfBirth,IsArchived
+	,IsSuperUser,ManagingAgentId,MigrationDate,IsAuthorizedToImpersonate,LastPasswordChange
+	,IsAuthorizedToVerifyDocument,IsAuthorizedToUserFiltersVisibility,EncryptedPassword,Salt)
+	values (
+	@UserName,null,0,'en-GB',getdate(),1,@OrganisationId,getdate()
+	,3,0,@UserName,null,null,null,null,'555-123-4567'
+	,null,@EmailAddress,1,@Surname,3,null,null
+	,getdate(),0,null,null,'2000-01-01',0
+	,1,null,null,1,getdate()
+	,1,1,@EncryptedPassword,@Salt);
+end;
+if not exists(select * from SupportUsers where SupportUserId = (select Id from Users where UserName = @UserName and IsDeleted = 0) and IsDeleted = 0)
+begin
+	insert into SupportUsers (SupportUserId,IsDeleted,AddedBy,AddedOn)
+	select Id,0,3,getdate() from Users where UserName = @UserName and IsDeleted = 0;
+end;
+
+-- ensure all numbers and email addresses are cleared
+-- update Users set PhoneNumber1 = '555-123-4567', PhoneNumber2 = '555-123-4567' , EmailAddress = '$EmailAddress$';
+
+]]></Code>
+		</Snippet>
+	</CodeSnippet>
+</CodeSnippets>
+
+ 
+

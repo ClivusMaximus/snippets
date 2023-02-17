@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+	<_locDefinition xmlns="urn:locstudio">
+		<_locDefault _loc="locNone"/>
+		<_locTag _loc="locData">Title</_locTag>
+		<_locTag _loc="locData">Description</_locTag>
+		<_locTag _loc="locData">Author</_locTag>
+		<_locTag _loc="locData">ToolTip</_locTag>
+	</_locDefinition>
+	<CodeSnippet Format="1.0.0">
+		<Header>
+			<Title>Unlock a Quooda User from all databases</Title>
+			<Shortcut/>
+			<Description>Unlock a Quooda User from all databases</Description>
+			<Author>Clivus Maximus</Author>
+			<SnippetTypes>
+				<SnippetType>Expansion</SnippetType>
+			</SnippetTypes>
+		</Header>
+		<Snippet>
+			<Declarations>
+				<Literal>
+					<ID>UserName</ID>
+					<ToolTip>UserName</ToolTip>
+					<Default>Clivus</Default>
+				</Literal>
+			</Declarations>
+			<Code Language="SQL"><![CDATA[
+use master;
+declare @cmd nvarchar(4000);
+set @cmd = 
+'use [?];
+declare @userName varchar(100) = ''$UserName$'';
+if ((select count(*) from sys.columns where Name in (''IsLocked'',''LastLoggedIn'',''FailedLoginAttempts'',''LastPasswordChange'',''UserName'') and Object_ID = Object_ID(''Users'')) = 5)
+begin 
+	select ''?'' [Database],IsLocked,LastLoggedIn,FailedLoginAttempts,LastPasswordChange,UserName from Users where UserName = @userName; 
+	set QUOTED_IDENTIFIER ON; 
+	update Users set IsLocked=0, LastLoggedIn=getdate(), FailedLoginAttempts=0, LastPasswordChange=getdate() where UserName = @userName; 
+end;';
+exec sp_MSforeachdb @cmd;
+]]></Code>
+		</Snippet>
+	</CodeSnippet>
+</CodeSnippets>
+
+ 
+

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+	<_locDefinition xmlns="urn:locstudio">
+		<_locDefault _loc="locNone"/>
+		<_locTag _loc="locData">Title</_locTag>
+		<_locTag _loc="locData">Description</_locTag>
+		<_locTag _loc="locData">Author</_locTag>
+		<_locTag _loc="locData">ToolTip</_locTag>
+	</_locDefinition>
+	<CodeSnippet Format="1.0.0">
+		<Header>
+			<Title>Production Data Patch Base</Title>
+			<Shortcut>pdp</Shortcut>
+			<Description>Production Data Patch Base</Description>
+			<Author>Clivus Maximus</Author>
+			<SnippetTypes>
+				<SnippetType>Expansion</SnippetType>
+			</SnippetTypes>
+		</Header>
+		<Snippet>
+			<Declarations/>
+			<Code Language="SQL"><![CDATA[
+SET XACT_ABORT ON;
+
+BEGIN TRANSACTION;
+
+BEGIN TRY
+
+	/*Script Content*/
+	
+	/*Query Proves The Script Has Been Executed Successfuly*/
+	
+	/*COMMIT OR ROLLBACK TRANSACTION REGARDING A PARAMETER*/
+	
+END TRY
+
+BEGIN CATCH
+
+	IF XACT_STATE() <> 0
+	BEGIN
+		ROLLBACK TRANSACTION;
+	END;
+
+	SELECT ERROR_NUMBER() AS ErrorNumber
+		,ERROR_SEVERITY() AS ErrorSeverity
+		,ERROR_STATE() AS ErrorState
+		,ERROR_LINE() AS ErrorLine
+		,ERROR_PROCEDURE() AS ErrorProcedure
+		,ERROR_MESSAGE() AS ErrorMessage;
+END CATCH
+
+]]></Code>
+		</Snippet>
+	</CodeSnippet>
+</CodeSnippets>
+
+ 
+

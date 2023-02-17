@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+	<_locDefinition xmlns="urn:locstudio">
+		<_locDefault _loc="locNone"/>
+		<_locTag _loc="locData">Title</_locTag>
+		<_locTag _loc="locData">Description</_locTag>
+		<_locTag _loc="locData">Author</_locTag>
+		<_locTag _loc="locData">ToolTip</_locTag>
+	</_locDefinition>
+	<CodeSnippet Format="1.0.0">
+		<Header>
+			<Title>Custom script template</Title>
+			<Shortcut/>
+			<Description>Provide a custom script template for scripts to be run in production</Description>
+			<Author>SOran</Author>
+			<SnippetTypes>
+				<SnippetType>Expansion</SnippetType>
+			</SnippetTypes>
+		</Header>
+		<Snippet>
+			<Declarations>
+			</Declarations>
+			<Code Language="SQL"><![CDATA[
+DECLARE @isTest BIT = 1;
+/*declare variables*/
+
+
+SET XACT_ABORT ON;
+
+BEGIN TRANSACTION;
+
+BEGIN TRY
+	/*do your work here*/
+END TRY
+
+BEGIN CATCH
+	IF XACT_STATE() <> 0
+	BEGIN
+		ROLLBACK TRANSACTION;
+	END;
+
+	SELECT ERROR_NUMBER() AS ErrorNumber
+		,ERROR_SEVERITY() AS ErrorSeverity
+		,ERROR_STATE() AS ErrorState
+		,ERROR_LINE() AS ErrorLine
+		,ERROR_PROCEDURE() AS ErrorProcedure
+		,ERROR_MESSAGE() AS ErrorMessage;
+END CATCH
+
+IF @isTest = 1
+BEGIN
+	IF @@TRANCOUNT > 0
+	BEGIN
+		PRINT 'This is a test; rolling back transaction';
+
+		ROLLBACK TRAN;
+	END;
+END;
+ELSE
+BEGIN
+	IF @@TRANCOUNT > 0
+	BEGIN
+		PRINT 'Committing transaction';
+
+		COMMIT TRAN;
+	END;
+END;
+]]></Code>
+		</Snippet>
+	</CodeSnippet>
+</CodeSnippets>

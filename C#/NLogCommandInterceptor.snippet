@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<CodeSnippets  xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+	<CodeSnippet Format="1.0.0">
+		<Header>
+			<Title>NLogCommandInterceptor</Title>
+			<Shortcut>nlog</Shortcut>
+			<Description>Code snippet for NLogCommandInterceptor</Description>
+			<Author>Clivus Maximus</Author>
+			<SnippetTypes>
+				<SnippetType>Expansion</SnippetType>
+			</SnippetTypes>
+		</Header>
+		<Snippet>
+			<Declarations>
+			</Declarations>
+			<Code Language="csharp"><![CDATA[/// <summary>
+    /// Add this class to file C:\code\Titan\Sustainware.BusinessLayer\Database\SustainwareDbContext.cs
+    /// Then in SustainwareDbContext.cs method Get(int organisationId)
+    /// add the following to DEBUG statement:
+    /// #if DEBUG
+    ///     DbInterception.Add(new NLogCommandInterceptor());
+    /// #endif
+    /// using System;
+    /// using System.Collections.Generic;
+    /// using System.Data;
+    /// using System.Data.Common;
+    /// using System.Data.Entity.Infrastructure.Interception;
+    /// using System.Data.SqlClient;
+    /// using System.Reflection;
+    /// using System.Text;
+    /// </summary>
+    public class NLogCommandInterceptor : IDbCommandInterceptor
+    {
+        private static int _lastStatementOnlyHash;
+		private static int _lastExecutedStatementOnlyHash;
+
+        public void NonQueryExecuting(DbCommand command, DbCommandInterceptionContext<int> interceptionContext)
+        {
+            Log(MethodBase.GetCurrentMethod(), command);
+        }
+
+        public void NonQueryExecuted(DbCommand command, DbCommandInterceptionContext<int> interceptionContext)
+        {
+            Log(MethodBase.GetCurrentMethod(), command);
+        }
+
+        public void ReaderExecuting(DbCommand command, DbCommandInterceptionContext<DbDataReader> interceptionContext)
+        {
+            Log(MethodBase.GetCurrentMethod(), command);
+        }
+
+        public void ReaderExecuted(DbCommand command, DbCommandInterceptionContext<DbDataReader> interceptionContext)
+        {
+            Log(MethodBase.GetCurrentMethod(), command);
+        }
+
+        public void ScalarExecuting(DbCommand command, DbCommandInterceptionContext<object> interceptionContext)
+        {
+            Log(MethodBase.GetCurrentMethod(), command);
+        }
+
+        public void ScalarExecuted(DbCommand command, DbCommandInterceptionContext<object> interceptionContext)
+        {
+            Log(MethodBase.GetCurrentMethod(), command);
+        }
+
+        private void LogIfNonAsync<TResult>(DbCommand command, DbCommandInterceptionContext<TResult> interceptionContext)
+        {
+            Log(MethodBase.GetCurrentMethod(), command);
+        }
+
+        private void LogIfError<TResult>(DbCommand command, DbCommandInterceptionContext<TResult> interceptionContext)
+        {
+            Log(MethodBase.GetCurrentMethod(), command);
+        }
+
+        private void Log(MethodBase methodBase, DbCommand command)
+        {
+            var outputStatement = new StringBuilder();
+            var outputParameters = new StringBuilder();
+            var statement = command.CommandType == CommandType.StoredProcedure ? $$"exec {command.CommandText} {GetParameterNames(command.Parameters)}" : $$"{command.CommandText}";
+            outputStatement.AppendLine($$"{statement}");
+			
+            if (methodBase.Name.Equals("ReaderExecuted"))
+            {
+                if (_lastExecutedStatementOnlyHash != _lastStatementOnlyHash)
+                {
+                    System.Diagnostics.Trace.WriteLine($$"-- {methodBase.Name} @ {DateTime.Now:HH:mm:ss.fff} #{_lastStatementOnlyHash}");
+                    _lastExecutedStatementOnlyHash = _lastStatementOnlyHash;
+                }
+			
+                return;
+            }
+
+            if (command.Parameters?.Count > 0)
+            {
+                foreach (SqlParameter parameter in command.Parameters)
+                {
+                    var parameterValue = $$"{parameter.SqlValue}" == "Null"
+                        ? "null"
+                        : $$"'{parameter.SqlValue}'";
+
+                    string parameterDefinition;
+                    switch (parameter.SqlDbType)
+                    {
+                        case SqlDbType.Char:
+                        case SqlDbType.NChar:
+                        case SqlDbType.Binary:
+                        case SqlDbType.DateTimeOffset:
+                        case SqlDbType.DateTime2:
+                        case SqlDbType.Time:
+                        case SqlDbType.Decimal:
+                            parameterDefinition = $$"{parameter.SqlDbType}({parameter.Size})";
+                            break;
+                        case SqlDbType.NVarChar:
+                        case SqlDbType.VarChar:
+                        case SqlDbType.VarBinary:
+                            var parameterSize = parameter.Size == -1
+                                ? "max"
+                                : $$"{parameter.Size}";
+                            parameterDefinition = $$"{parameter.SqlDbType}({parameterSize})";
+                            break;
+                        case SqlDbType.NText:
+                        case SqlDbType.DateTime:
+                        case SqlDbType.Float:
+                        case SqlDbType.Image:
+                        case SqlDbType.BigInt:
+                        case SqlDbType.Int:
+                        case SqlDbType.SmallInt:
+                        case SqlDbType.Money:
+                        case SqlDbType.Real:
+                        case SqlDbType.SmallDateTime:
+                        case SqlDbType.SmallMoney:
+                        case SqlDbType.Text:
+                        case SqlDbType.UniqueIdentifier:
+                        case SqlDbType.Timestamp:
+                        case SqlDbType.TinyInt:
+                        case SqlDbType.Xml:
+                        case SqlDbType.Date:
+                        case SqlDbType.Variant:
+                        case SqlDbType.Udt:
+                        case SqlDbType.Structured:
+                            parameterDefinition = $$"{parameter.SqlDbType}";
+                            break;
+                        case SqlDbType.Bit:
+                            parameterDefinition = $$"{parameter.SqlDbType}";
+                            parameterValue = $$"{parameter.SqlValue}" == "False"
+                                ? "0"
+                                : "1";
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                    var parameterName = parameter.ParameterName.StartsWith("@")
+                        ? parameter.ParameterName
+                        : $$"@{parameter.ParameterName}";
+
+                    outputParameters.AppendLine(parameter.SqlValue == null
+                        ? $$"declare {parameterName} {parameterDefinition} = null;"
+                        : $$"declare {parameterName} {parameterDefinition} = {parameterValue};");
+                }
+            }
+
+            var output = $$"{outputParameters}{outputStatement}go";
+            if (output.GetHashCode() != _lastStatementOnlyHash)
+            {
+                System.Diagnostics.Trace.WriteLine($$"-- {methodBase.Name} @ {DateTime.Now:HH:mm:ss.fff}");
+                System.Diagnostics.Trace.WriteLine(output);
+                _lastStatementOnlyHash = output.GetHashCode();
+            }
+        }
+
+        private string GetParameterNames(DbParameterCollection commandParameters)
+        {
+            var output = string.Empty;
+            if (commandParameters?.Count > 0)
+            {
+                var parameterNames = new List<string>();
+                foreach (DbParameter commandParameter in commandParameters)
+                {
+                    parameterNames.Add($$"@{commandParameter.ParameterName}");
+                }
+
+                output = string.Join(",", parameterNames.ToArray());
+            }
+            return output;
+        }
+    }
+]]>
+			</Code>
+		</Snippet>
+	</CodeSnippet>
+</CodeSnippets>
